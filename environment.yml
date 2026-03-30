@@ -25,6 +25,7 @@ dependencies:
   - verde
   - harmonica
   - choclo
+  - ensaio
   - pip:
     - h5netcdf
     - numpy-stl
