@@ -111,7 +111,7 @@ def spherical_harmonics_bz(
 
 class SphericalHarmonicsBz:
 
-    def __init__(self, location, damping=None, min_degree=1, max_degree=10):
+    def __init__(self, location, damping=1e-1, min_degree=1, max_degree=10):
         self.location = location
         self.damping = damping
         self.max_degree = max_degree
