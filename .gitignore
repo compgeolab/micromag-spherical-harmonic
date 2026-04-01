@@ -3,3 +3,4 @@ __pycache__
 paper/*.pdf
 paper/*diff*.tex
 data/micromag_models/tecfiles/grids
+data/results/images
