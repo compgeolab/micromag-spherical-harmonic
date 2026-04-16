@@ -212,36 +212,74 @@ class SphericalHarmonicsBz:
     #     return self
 
 
+    # def update_location(self, coordinates, data):
+    
+    #     original_location = self.location.copy()
+    
+    #     def objective_function(z):
+    
+    #         location = original_location.copy()
+    #         location[-1] = z[0]  # only the z coordinate
+    
+    #         self.location = location
+    
+    #         self.fit(coordinates, data.bz)
+    
+    #         predicted = self.predict(coordinates, self.min_degree, self.max_degree)
+    #         residuals = data.bz - predicted.ravel()
+    
+    #         return np.sqrt(np.mean(residuals**2))
+    
+    #     result = sp.optimize.minimize(
+    #         objective_function,
+    #         x0=[self.location[-1]],  # only the z coordinate
+    #         method="Nelder-Mead",
+    #         tol=1.0e-2,
+    #         options={"maxiter": 500}
+    #     )
+    
+    #     if result.success and np.isfinite(result.x[0]):
+    #         self.location[-1] = result.x[0]
+    #     else:
+    #         self.location = original_location
+    
+    #     return self
+        
+
     def update_location(self, coordinates, data):
-    
+
         original_location = self.location.copy()
-    
+
+        if hasattr(data, "bz"):
+            values = data.bz
+        else:
+            values = data
+
         def objective_function(z):
-    
+
             location = original_location.copy()
             location[-1] = z[0]  # only the z coordinate
-    
+
             self.location = location
-    
-            self.fit(coordinates, data.bz)
-    
+
+            self.fit(coordinates, values)
+
             predicted = self.predict(coordinates, self.min_degree, self.max_degree)
-            residuals = data.bz - predicted.ravel()
-    
+            residuals = values - predicted.ravel()
+
             return np.sqrt(np.mean(residuals**2))
-    
+
         result = sp.optimize.minimize(
             objective_function,
-            x0=[self.location[-1]],  # only the z coordinate
+            x0=[self.location[-1]],
             method="Nelder-Mead",
             tol=1.0e-2,
             options={"maxiter": 500}
         )
-    
+
         if result.success and np.isfinite(result.x[0]):
             self.location[-1] = result.x[0]
         else:
             self.location = original_location
-    
+
         return self
-        
