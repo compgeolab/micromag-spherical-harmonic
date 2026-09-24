@@ -1,172 +1,339 @@
+% Needed to typeset the parameter vector for the SH inversion
+\setcounter{MaxMatrixCols}{15}
 
 \section{Introduction}
 
+Recent advances in magnetic microscopy have expanded its potential for quantitative paleomagnetic applications by enabling the investigation of increasingly complex magnetic sources. Magnetic microscopy will continue to push toward smaller sensor–sample standoff and higher spatial resolution, revealing complex magnetic behavior beyond dipole-dominated signatures. Under these conditions, higher-order contributions (quadrupole, octupole, and beyond) become non-negligible \citep[\textit{e.g.,}][]{CortesOrtuno2021, CortesOrtuno2022, Bellon2026}, particularly for larger grains, clustered sources, and measurements close to the sample. Although the dipolar contribution can alone be used to efficiently describe the full magnetic moment of a source \citep{Bellon2026}, it is the non-dipolar components of a stray field that will carry a particle's domain-state signature \citep{Fabian2019,CortesOrtuno2022}. Spherical–harmonic (SH) expansions \citep{CortesOrtuno2022,Lima2023} provide a compact representation of fields by expressing the external magnetic potential on a virtual spherical surface enclosing the source.
 
-% Magnetic microscopy has seen rapid technological advances, allowing measurements increasingly closer to the sample surface. In such proximity, the assumption that magnetic sources can be represented as pure dipoles becomes inadequate. Higher-order multipole terms, such as quadrupoles and octupoles, become relevant for accurate modeling. Existing methods based on spherical harmonic expansion can model these terms but require detailed knowledge of the source's size and shape, often acquired through tomography. However, this information is frequently unavailable due to the non-uniqueness of the magnetic inversion problem.
+In magnetic microscopy,  \citet{Lima2023} showed that it is possible to use surface-plane measurements — e.g., the vertical component of the magnetic field of a thin section acquired with a Quantum Diamond Microscope (QDM) — to invert the magnetic moment of a given source using SH expansions. It is well known that the degree 1 SH coefficients under Schmidt normalization are proportional do the three components of a magnetic dipole located at the expansion center \citep{Blakely1996}. On planar data, however, the spherical-harmonic coefficients are determined conditionally on the geometry and assumptions of the inversion. A single planar map samples only a limited, upper-side angular aperture of the external field and therefore does not preserve the spherical-harmonic orthogonality available on a closed enclosing surface. As a result, the fitted coefficients can become correlated and sensitive to measurement noise, model truncation, the assumed expansion center, and the spatial aperture of the measurements. In particular, errors in the expansion center can redistribute power among spherical-harmonic degrees, potentially introducing artificial higher-order contributions and biasing lower-order coefficients \citep{Lima2023}.
 
-% Unlike gravitational potential data, where the center of mass provides a natural reference point for spherical harmonic expansion, magnetic data lacks an equivalent ``magnetic center''. This absence poses a challenge for applying spherical harmonic expansions to magnetic fields, particularly when the source geometry is unknown or irregular. In this context, we propose an alternative approach based on low-order multipole estimation that circumvents the need for spherical harmonic decomposition. By employing Euler deconvolution, we can estimate the central position of the magnetic source. This estimated center serves as a reference for computing magnetic multipole moments without requiring detailed knowledge of the particle's true shape or size, offering a more practical and computationally efficient strategy for analyzing complex magnetic field data.
+These issues could be mitigated, as shown by \citet{Out2026}, by using double-sided magnetic microscopy combined with three-dimensional tomographic experiments to determine the positions of magnetic sources within the sample's subsurface. However, incorporating tomography into the experimental workflow introduces additional complexity and cost. Conventional computerized CT scans often lack the resolution to detect the smallest single-domain (SD) and single-vortex (SV) particles. Even when high-resolution techniques do succeed, they are often chemically or structurally unresolved (e.g., Focused Ion Beam tomography, \cite{Nikolaisen-2020,Hristo-2025}), or they must be restricted to very small areas (typically on the order of $\sim 20~\mu\mathrm{m}^2$), as is the case for ptychographic X-ray computed nanotomography \citep{Bellon-2024a}. 
 
-% We propose a method that bypasses these limitations by estimating multipole moments using a Cartesian framework. The method requires only the center position of the source, as obtained via Euler deconvolution, and does not depend on spherical harmonics or source geometry. The objective of this paper is to implement and validate this Cartesian multipole fitting approach using synthetic data. We compare its performance with traditional dipole fitting methods and assess its advantages in modeling higher-order magnetic signals.
+An alternative approach is to rely solely on the observed magnetic data and invert SH coefficients only for the detected anomalies, which represents a virtual source enclosed within a single shell centered on that anomaly. Unlike gravitational potential data, for which the center of mass provides a natural reference point for spherical expansions, magnetic data lack an equivalent and uniquely defined ``magnetic center'' \citep{Lima2023}. This creates a major practical challenge: under the planar geometry of magnetic microscopy, even small source-centering errors may induce spectral leakage and bias the recovered SH coefficients and dipole moment.
+% Under this open-geometry configuration, even small source-centering errors may generate severe spectral leakage, redistributing power among harmonic degrees, coupling coefficients, and biasing lower-order estimates such as the dipole moment.
 
-
-Magnetic microscopy continues will continue to push toward smaller sensor–sample standoff and higher spatial resolution, revealing complex magnetic behavior beyond dipole-dominated signatures. In these conditions, higher-order contributions (quadrupole, octupole, and beyond) become non-negligible \citep[\textit{e.g.,}][]{CortesOrtuno2021, CortesOrtuno2022,Bellon2025b}, particularly for larger grains, clustered sources, and measurements close to the sample. Although the dipolar contribution can alone be used to efficiently describe the full magnetic moment of particle (source) \citep{Bellon2025b}, it is the non-dipolar components of a stray field that will carry a particle's domain-state signature \citep{Fabian2019,CortesOrtuno2022}. Spherical–harmonic (SH) expansions \citep{CortesOrtuno2022,Lima2023} provide a compact and rotation–friendly representation of such fields. A non-intersecting shell is virtually built to contain the magnetic source and, when this is  well-centered and conservatively truncated, the stray field magnetic fit on the shell can be reliably used to calculate the observed fields in arbitrary planes. In the context of magnetic microscopy, this means being able to use surface plane measurements --  e.g., the vertical component of the magnetic field of a thin-section acquired through a Quantum Diamond Microscope (QDM) -- to invert the magnetic moment of a given source using SH expansions. On planar data, however, SH performance is sensitive to the choice of expansion center and degree: loss of orthogonality on the plane, miscentering, and noise can couple coefficients across degrees and bias low–order terms.
-
-Technically, this issue could be addressed by performing three-dimensional tomographic experiments to determine the position of every magnetic source within the subsurface of the sample, as is commonly done in micromagnetic tomography (MMT) \citep{DeGroot2021, Cortez-Ortuno-2024}. However, incorporating tomography into the experimental workflow introduces additional complexity: standoff computerized CT scans generally do not provide sufficient resolution to detect the smallest single-domain (SD) and single-vortex (SV) particles. Even when high-resolution techniques do succeed, they are often chemically or structurally unresolved (e.g., Focused Ion Beam tomography, \cite{Nikolaisen-2020,Hristo-2025}), or they must be restricted to very small areas (typically on the order of $\sim 20~\mu\mathrm{m}^2$), as is the case for ptychographic X-ray computed nanotomography \citep{Bellon-2024a}. An alternative approach is to rely solely on the observed magnetic data and invert only for the detected anomalies, representing each anomaly by a virtual source enclosed within a single shell centered on that anomaly. A central practical difficulty is the absence of a natural “magnetic center”: unlike gravity, there is no center-of-mass analogue that can be identified a priori to stabilize an expansion \citep{Lima2023}. When source geometry is unknown or irregular, even small centering errors redistribute spectral power and degrade estimates. This motivates a complementary strategy in which the center is estimated from the field itself and, around that center, a low–order model captures the dominant curvature without relying on spherical functions.
-
-We pursue this strategy by seeding the center with a modified Euler deconvolution strategy \citep{Reid1990,Souza-Junior2024,Souza-Junior2025} and then fitting a Cartesian multipole (CM) model (dipole, quadrupole, octupole) about that center. The method requires only a center (no explicit size/shape assumptions), integrates naturally with gradient–based optimization, and is well conditioned for local, planar problems. In parallel, we implement the SH formulation following recent developments \citep{Lima2023} to provide a baseline that is spectrally complete and transferable across heights when the center and truncation are well chosen.  We apply this methodology to two synthetic datasets: one generated using our CM model, and another based on a set of idealized spherical, prolate, oblate, and cuboctahedral equidimensional particles that were micromagnetically modeled. We compared the Cartesian and SH approaches, quantified their sensitivity to centering and model order, and delineated the regimes in which each method is preferred as a function of sensor height, grain size and shape, source overlap, and noise level.
-
-
+In this context, we pursue a center-of-expansion seeding technique based on Euler deconvolution (ED) \citep{Reid1990,Souza-Junior2024,SouzaJunior2026}. The method requires only the observed magnetic field and its derivatives, avoids explicit size and shape assumptions, and is well conditioned for local planar problems. In parallel, we implement the SH formulation of \citet{Lima2023}, enabling a spectrally complete representation of the magnetic field that can be propagated to arbitrary observation planes once the expansion center and truncation degree are properly constrained. We apply this methodology to both realistic synthetic and real QDM datasets and compare it against dipole-based models from \citet{SouzaJunior2026}. The synthetic dataset consists of idealized micromagnetic particle models, which allow us to delineate the conditions under which the method performs best as a function of sensor height, grain size and shape, and noise level. The real data enable an assessment of robustness under practical measurement conditions.
 
 \section{Methods}
 
+The general methodology for inversion of magnetic microscopy data follows \citet{Souza-Junior2024} and \citet{SouzaJunior2026}. A summary of the workflow is as follows:
+
+\begin{enumerate}
+    \item Calculate the $x$-, $y$-, and $z$-derivatives of the data.
+    \item Calculate the total-gradient amplitude \citep{Blakely1996} and stretch its contrast to highlight weaker sources.
+    \item Detect the individual magnetic signals using a Laplacian of Gaussian method \citep{Kong2013}.
+    \item For each detected signal:
+    \begin{enumerate}
+        \item Isolate the data for that source.
+        \item Estimate the position of the source using Euler Deconvolution \citep{Reid1990}.
+        \item Estimate the magnetic moment through a linear inversion.
+        \item Perform a non-linear inversion to refine the source position and magnetic moment estimates.
+        \item Forward model the signal and remove it from the entire dataset.
+    \end{enumerate}
+\end{enumerate}
+
+The main change introduced here to the methodology above is the replacement of the linear and non-linear dipole inversions with spherical harmonic counterparts to account for multipolar components in the data.
+
+\subsection{Spherical–harmonic inversion of $b_z$}
+
+Based on the conventional spherical-harmonic (SH) representation \citep{Lima2023}, we construct an SH expansion that reproduces the measured vertical field component $b_z$ on the observation surface. The exterior SH expansion is valid at any observation point outside a sphere enclosing all magnetic sources. However, the standard orthogonal recovery of SH coefficients requires field sampling over a complete enclosing spherical surface. For single-plane measurements, the expansion remains valid as a forward model, but its coefficients must be estimated by a regularized inversion and can be correlated because the SH basis is not orthogonal over the sampled aperture. Here we propose an alternative and more flexible strategy to choose the expansion center. Following \citet{Souza-Junior2024} and \citet{SouzaJunior2026}, we use Euler Deconvolution \citep{Reid1990} to estimate the location of the source under a dipolar approximation, which is then used as the expansion center $\mathbf{p} = (x_c, y_c, z_c)$.
+
+We first define a Cartesian system $(x, y, z)$ that is aligned with the magnetic microscopy image, with the $z$-axis pointing upward. The origin of the system is the lower left corner of the sample. Given an expansion center at $(x_c, y_c, z_c)$, we can define a spherical coordinate system $(r, \theta, \phi)$ with origin on the expansion center (Figure \ref{fig:coordinates-system}). Here, $r$ is the radial coordinate, $\theta$ is the colatitude (angular distance from the $z$-axis), and $\phi$ is the longitude or azimuth (angular distance from the $x$-axis). The spherical harmonic expansion of the vertical component of the magnetic field $b_z$ is
+
+\begin{figure}[tb!]
+  \centering
+  \includegraphics[width=0.6\linewidth]{figures/coordinate-system-sketch.png}
+\caption{Schematic diagram of the measurement geometry and coordinate systems. The Cartesian coordinate system $(x, y, z)$ is established with its origin at the sample surface ($z = 0$). Measurement data points (blue dots) are acquired on a planar grid at a constant elevation ($z > 0$) above the surface. An expansion center is located at depth within the sample volume, defining a translated local coordinate system $(x', y', z')$. The red vector $\vec{m}$ represents the source vector (e.g., dipole moment) at this center. The spatial relationship between the expansion center and an arbitrary data point is described by the position vector $\mathbf{r}$ and the spherical angles $\theta$ (colatitude) and $\phi$ (longitude).
+}
+\label{fig:coordinates-system}
+\end{figure}
+
+\begin{equation}
+    b_z(r,\theta,\phi) = \mu_0 \sum_{n = 1}^{L} \left(\frac{a}{r} \right)^{n+2}
+    \sum_{m = 0}^{n}
+    \left[
+        (n + 1) P_n^m(\cos\theta)\cos\theta
+        + \dfrac{\partial P_n^m}{\partial\theta}(\cos\theta)\sin\theta
+    \right]
+    \left(
+        g_n^m\cos m\phi + h_n^m\sin m\phi
+    \right)
+\ ,
+\label{eq:sh}
+\end{equation}
+
+\noindent in which $\mu_0$ is the vacuum magnetic permeability, $n$ is the degree, $m$ is the order, $L$ is the maximum degree of the expansion, $a$ is the reference radius, $P_n^{m}$ are the Schmidt-normalized associated Legendre functions, and $g_n^m$ and $h_n^m$ are the Gauss coefficients of the expansion. The $P_n^m$ and their derivatives are calculated with recursion relations \citep{Holmes2002}, as implemented in the \textit{Harmonica} library \citep{harmonica2020}.
+
+Defining a observed data vector $\mathbf{d}^o$ containing the $N$ observations of $b_z$ and a parameter vector $\mathbf{c}$ as
+
+\begin{equation}
+    \mathbf{c} = 
+    \begin{bmatrix}    
+        g_1^0 & g_1^1 & g_2^0 & g_2^1 & \cdots & g_L^L 
+        & h_1^1 & h_2^1 & h_2^2 & h_3^1 & \cdots & h_L^L
+    \end{bmatrix}^T_{M \times 1} \ ,
+\end{equation}
+
+\noindent
+we can formulate the forward problem in Equation~\ref{eq:sh} as a linear system $\mathbf{d} = \mathbf{G}\mathbf{c}$. The Jacobian matrix $\mathbf{G}$ has columns corresponding to the cosine- and sine-type basis functions associated with the Gauss coefficients $g_n^m$ and $h_n^m$ and is defined as
+
+\begin{equation}
+    \mathbf{G} =
+    \begin{bmatrix}
+        K_{1, 1}^0 & K_{1, 1}^1 & K_{2, 1}^0 & K_{2, 1}^1 & \cdots & K_{L, 1}^L & J_{1, 1}^1 & J_{2, 1}^1 & J_{2, 1}^2 & \cdots & J_{L, 1}^L
+        \\
+        K_{1, 2}^0 & K_{1, 2}^1 & K_{2, 2}^0 & K_{2, 2}^1 & \cdots & K_{L, 2}^L & J_{1, 2}^1 & J_{2, 2}^1 & J_{2, 2}^2 & \cdots & J_{L, 2}^L
+        \\
+        & & & & & \vdots 
+        \\
+        K_{1, N}^0 & K_{1, N}^1 & K_{2, N}^0 & K_{2, N}^1 & \cdots & K_{L, N}^L & J_{1, N}^1 & J_{2, N}^1 & J_{2, N}^2 & \cdots & J_{L, N}^L        
+    \end{bmatrix}_{N \times M} \ ,
+\label{eq:jacobian}
+\end{equation}
+
+\noindent
+in which $K_{n,i}^m$ and $J_{n,i}^m$ are
+
+\begin{align}
+K_{n, i}^m &= \left( \frac{a}{r_i} \right)^{n + 2} \left[
+    (n + 1) P_n^m(\cos\theta_i)\cos\theta_i + 
+    \dfrac{\partial P_n^m}{\partial \theta}(\cos\theta_i)\sin\theta_i
+\right] \cos m\phi_i \ ,
+\\
+J_{n, i}^m &= \left( \frac{a}{r_i} \right)^{n + 2} \left[
+    (n + 1) P_n^m(\cos\theta_i)\cos\theta_i + 
+    \dfrac{\partial P_n^m}{\partial \theta}(\cos\theta_i)\sin\theta_i
+\right] \sin m\phi_i \ .
+\end{align}
+
+The parameter vector $\mathbf{c}$ is then obtained through a damped linear least-squares inversion (zero-order Tikhonov regularization). This approach estimates $\mathbf{c}$ by minimizing the objective function
+
+\begin{equation}
+\Phi(\mathbf{c}) = \| \mathbf{d}^o - \mathbf{G}\mathbf{c} \|_2^2 + \lambda \| \mathbf{c} \|_2^2
+\end{equation}
+
+\noindent
+in which $\lambda$ is the positive regularization parameter. However, the columns of the Jacobian $\mathbf{G}$ can have very different scales as the degree $n$ increases, leading to instability of the inverse problem. To counteract this, we normalize the Jacobian matrix using a diagonal matrix $\mathbf{S}$, whose diagonal elements $S_{ii} = \sigma_i$ are the standard deviation of the $i$-th column of $\mathbf{G}$ \citep{Soler2021}. The objective function is transformed to 
+
+\begin{equation}
+\Phi(\mathbf{w}) = \| \mathbf{d}^o - \underbrace{\mathbf{G}\mathbf{S}^{-1}}_{\mathbf{D}}\underbrace{\mathbf{S}\mathbf{c}}_{\mathbf{w}} \|_2^2 + \lambda \| \mathbf{w} \|_2^2
+\end{equation}
+
+The optimal normalized coefficient vector $\mathbf{w}$ is obtained by solving the corresponding normal equations
+
+\begin{equation}
+(\mathbf{D}^T \mathbf{D} + \lambda \mathbf{I})\mathbf{w} = \mathbf{D}^T \mathbf{d}^o
+\end{equation}
+
+\noindent
+where $I$ is the identity matrix. Once an estimate of $\mathbf{w}$ is obtained, we calculate the spherical harmonic Gauss coefficients as $\mathbf{c} = \mathbf{S}^{-1}\mathbf{w}$.
+
+Another advantage of the normalization of the Jacobian matrix is that the range of acceptable values for the regularization parameter $\lambda$ will be more predictable since it won't depend on the model and data dimensions as strongly. Here, we use a regularization parameter of $\lambda = 10^{-1}$, which was empirically selected as the value that best preserves the benchmark results obtained from the micromagnetic particle simulations (see Section~\ref{numerical_simulation}).
+
+Once the Gauss coefficients have been estimated, the Cartesian components of the magnetic moment (in $Am^2$) of a dipolar source located at the expansion center $(x_c, y_c, z_c)$ are calculated directly from the first-degree coefficients. Following \citet{Blakely1996},
+
+\begin{equation}
+\mathbf{m} = 
+\begin{bmatrix}
+    m_x \\ m_y \\ m_z
+\end{bmatrix} = 4\pi \mu_0 a^3
+\begin{bmatrix}
+    g_1^1 \\ h_1^1 \\ g_1^0
+\end{bmatrix}
+\end{equation}
+
+\noindent
+in which $a$ is the reference radius that contains the magnetic source. For our purposes, it is safe to assume that the source is contained in a circle of radius equal to the minimum radial coordinate $r_i$ of the data.
 
 
-\subsubsection{Spherical–harmonic inversion of \texorpdfstring{$b_z$}{Bz}}
+\subsubsection{Nonlinear Position Refinement}\label{nonlinear-inversion}
 
-To compare our new CM fitting method with a conventional spherical-harmonic (SH) representation \citet{Lima2023}, we construct an SH expansion that reproduces the measured vertical field component $b_z$ on the observation surface.  An SH expansion is valid provided that all magnetic sources lie inside a reference sphere of radius $a$, regardless of their geometry or exact location.  However, the choice of expansion center $\mathbf{c}$ strongly influences the conditioning and accuracy of the fit. Here we propose an alternative and more flexible strategy to choose the expansion center based on Euler deconvolution solution for a source's location ($x_c$,$y_c$,$z_c$) with optional refinement.
+The estimated Gauss coefficients and the corresponding magnetic moment $\mathbf{m}$ are strongly dependent on the choice of expansion center $(x_c, y_c, z_c)$. 
+It is also know that Euler Deconvolution is sensitive to random noise in the data and the presence of interfering sources in the data window \citep{Uieda2025,Silva2001}.
+Thus, the estimated magnetic moment based solely on the Euler Deconvolution and spherical harmonics results will likely be biased.
 
-For $r > a$, where $a$ denotes the radius of a reference spherical shell enclosing all magnetic sources, the scalar magnetic potential is expanded in real spherical harmonics of maximum degree $N$. Differentiation of the potential and projection onto the laboratory $z$ axis yields: 
-
-\[
-b_z(r,\theta,\phi)
-=\mu_0 \sum_{n=1}^{N}\left(\frac{a}{r}\right)^{n+2}
-\sum_{m=0}^{n}
-\Big[(n+1)\cos\theta\,P_{n}^{m}(\cos\theta)
-+\sin\theta\,\partial_\theta P_{n}^{m}(\cos\theta)\Big]\,
-\big(g_{n}^{m}\cos m\phi+h_{n}^{m}\sin m\phi\big).
-\]
-
-\noindent In this expression, $(r,\theta,\phi)$ are the spherical coordinates of the evaluation point, where  $r$ is the radial distance, $\theta$ the colatitude, and $\phi$ the azimuthal angle. The functions $P_n^{m}(\cos\theta)$ are the associated Legendre polynomials of degree $n$ and order $m$. The angular derivative $\partial_\theta P_n^{m}$ is evaluated in closed form via: 
-
-\[
-\partial_\theta P_{n}^{m}(\cos\theta)=
-\frac{n\cos\theta\,P_{n}^{m}(\cos\theta)- (n+m)\,P_{n-1}^{m}(\cos\theta)}{\sin\theta}.
-\]
-
-We assemble a real design matrix $G$ whose columns correspond to the cosine- and sine-type basis functions associated with the coefficients $g_n^{m}$ and $h_n^{m}$ (with $h_n^{m}$ present for $m \ge 1$).  Each row of $G$ contains the evaluation of these basis functions at a particular observation point, as dictated by the expression for $b_z(r,\theta,\phi)$ above. The coefficient vector is then obtained through a standard linear least-squares solution.
-
-The reference radius is set to $a = \max_i r_i$, where $r_i = \|\mathbf{x}_i - \mathbf{p}\|$ is the distance from the initial expansion center (obtained from Euler Deconvolution) to the $i$-th observation point. When needed, we refine the expansion center $\mathbf{c}$ by minimizing the RMS prediction error using a derivative-free search method \citep[Nelder–Mead,][]{Nelder-Mead1965}. At each candidate center, the spherical coordinates $(r,\theta,\phi)$ of all data points are recomputed, the design matrix $G$ is rebuilt, and the coefficients are re-estimated. This optional refinement is more computationally demanding, but it substantially improves stability and accuracy when the sources are clustered or asymmetric.
+To refine the estimate, we employ a non-linear inversion method similar to what \citet{SouzaJunior2026} did for dipole inversion.
+We refine the expansion center estimate by minimizing the mean-squared error of the $b_z$ prediction using the Nelder-Mean derivative-free optimization method \citep{Nelder-Mead1965, 2020SciPy-NMeth}. At each candidate center, the spherical coordinates $(r,\theta,\phi)$ of all data points are recomputed, the design matrix $G$ is rebuilt, and the coefficients are re-estimated. This refinement is more computationally demanding, but it substantially improves stability and accuracy when the sources are clustered in the microscopy image or are asymmetric. The Euler Deconvolution and linear spherical harmonic inversion results are used as initial estimates for the non-linear Nelder-Mead optimization.
 
 
+\subsection{Performance metrics}\label{metrics}
+% To quantify the performance of each inversion strategy, three misfit metrics were used.  
+
+To enable a systematic comparison between the tested inversion strategies for the synthetic models, a set of complementary misfit metrics was adopted to evaluate the recovery of the main source parameters. These metrics quantify the accuracy of the estimated magnetic moment direction and intensity and the source position relative to their known true values. The directional accuracy was measured by the angular misfit: 
+
+\begin{equation}
+\label{eq:ang_misfit}
+\Delta\alpha~[^{\circ}] = \arccos\!\left(
+\frac{\hat{\mathbf{m}}\cdot \mathbf{m}^{\mathrm{true}}}
+{\|\hat{\mathbf{m}}\|\,\|\mathbf{m}^{\mathrm{true}}\|}
+\right),
+\end{equation}
+
+\noindent where $\hat{\mathbf{m}}$ denotes the recovered dipole-moment vector, $\mathbf{m}^{\mathrm{true}}$ the corresponding true dipole-moment vector. The relative dipole-moment misfit quantified the intensity accuracy: 
+
+\begin{equation}
+\label{eq:m_misfit}
+\Delta m~[\%] =
+100\,\frac{\big|\|\hat{\mathbf{m}}\| - \|\mathbf{m}^{\mathrm{true}}\|\big|}
+{\|\mathbf{m}^{\mathrm{true}}\|},
+\end{equation}
+
+ \noindent Finally, we assessed the position misfit, defined as the Euclidean distance between the true source centroid $\mathbf{p}^{\mathrm{true}}$ and recovered expansion center coordinates $\hat{\mathbf{p}} = (x_c, y_c, z_c)$:
 
 
-\subsection{Micromagnetically constrained dataset}
+\begin{equation}
+\label{eq:pos_misfit}
+\Delta r~[\mu m] = \left\|\hat{\mathbf{p}} - \mathbf{p}^{\mathrm{true}}\right\|.
+\end{equation}
 
-We obtained a variety of domain-states, in a way that we observe a transition from single-domain (SD), to single-vortex (SV), up to multivortex (MV) as the particle sizes increase (\hl{see Supplementary Figure XX}). Our SH expansion fits, evaluated up to degree 11, produce coefficients that explain so well the observed micromagnetic predicted stray-field that residuals are pratically neglectable (see Figure \ref{fig:spherical-harmonic-fitting}, which gives confidence that $b_z$-maps we produced with these fits capture the natural decay of stray-fields robustly. 
+
+
+
+\section{Synthetic Model}\label{numerical_simulation}
+
+In this section, we evaluate the effectiveness of the SH method using a simulated realistic dataset of idealized shaped sub-micron magnetite ($Fe_3O_4$) particles. A total of 20 particle models were considered, comprising four shape classes: spheres, prolate and oblate ellipsoids, and euhedral cuboctahedral particles. For the spherical particles, the radius ranged from 0.025 to 0.5~$\mu$m. Prolate ellipsoids semi-axes were defined with $a > b = c$, while oblate ellipsoids follow $a = b > c$, with semi-axis ratios of 2:1 between the major and minor axes. In both cases, the characteristic size was varied over the same range as for the spheres radii. For the euhedral cuboctahedral particles, geometric parameters are controlled by a maximum elongation parameter $E_{\mathrm{max}}$, which varies from 0.05 to 1.
+
+To compute the stray magnetic fields, we first determined the Local Energy Minimum (LEM) domain states for each particle using the open-source micromagnetic solver \textsc{MERRILL} \citep[Micromagnetic Earth Related Robust Interpreted Language Laboratory,][]{Oconbhui-2018}. Each particle geometry was discretized into linear tetrahedral finite elements, and the total magnetic free energy was minimized. For every particle, 100 independent minimizations were performed, and the thermodynamically most probable configuration (i.e., the lowest-energy state) was selected as the representative LEM. We obtained a variety of domain-states, in a way that we observe a transition from single-domain (SD), to single-vortex (SV), up to multivortex (MV) as the particle sizes increase. The forward stray field was then computed using a tetrahedral integration approach \citep{Bellon2026}, adapted from \citet{Fabbri-2008}. This method exploits the tetrahedral discretization used in \textsc{MERRILL} by evaluating the magnetic field contribution of each uniformly magnetized element based solely on its geometry and magnetization direction.
+
+Before applying the SH framework to planar observations, we evaluated its performance under ideal conditions by fitting the micromagnetically predicted stray field on a spherical shell enclosing each particle. The shell was defined at a constant radial offset from the particle, corresponding to 5\% of its largest semi-axis, and only the vertical component $b_z$ was considered to remain consistent with QDM measurements. In this configuration, the field is sampled over a closed surface, satisfying the orthogonality conditions required for spherical harmonic expansions. 
+
+SH fits up to degree 10 reproduce the synthetic stray field with negligible residuals (Figure~\ref{fig:spherical-harmonic-fitting}), with no significant improvement observed for higher degrees. A damping factor of $10^{-1}$ was adopted, as it provides a stable solution while preserving the fidelity of the recovered coefficients. Together, this choice of maximum degree and damping was found to yield consistent results in benchmark tests, in which the dipole moment estimated from the SH coefficients agrees with the total magnetic moment computed directly from the micromagnetic models (i.e., the sum of the $m_x$, $m_y$, and $m_z$ contributions over all tetrahedral elements from \textsc{MERRILL}). This demonstrates that the resulting coefficients accurately capture the natural spatial decay of the field and provides a reference benchmark for subsequent analyses on planar data, where these ideal conditions are not met.
 
 \begin{figure}[tb!]
   \centering
   \includegraphics[width=1\linewidth]{paper/figures/particles_spherical_harmonic_fitting.png}
-\caption{Micromagnetic forward models used for benchmarking. Columns show grain shape (sphere, prolate, oblate, euhedral); rows increase grain size. For each case, Merrill simulations produced $B_z$ on a spherical shell (left), the shell data were fit with real spherical–harmonic coefficients (middle: SH prediction on the same shell), and residuals are shown on the right. The close match indicates that the SH expansion faithfully represents the shell data across shapes and sizes.}
+\caption{Micromagnetic forward models used as benchmark datasets for evaluating the inversion approaches across all tested particle geometries. For each case, MERRILL simulations produced $B_z$ on a spherical shell (left), the shell data were fit with real SH coefficients (middle), and residuals are shown on the right.}
 
   \label{fig:spherical-harmonic-fitting}
 \end{figure}
 
-Before describing the comparison between our inversion results for this dataset, we first examined the influence of non-dipolar components as a function of distance by analyzing the power spectrum of each SH coefficient (Figure~\ref{fig:spherical-harmonic-spectro}). In all cases, the degree-1 term dominates the energy spectrum at all heights. For the smallest particles in the SD state (50 nm; Figure~\ref{fig:spherical-harmonic-spectro}a–d), it is effectively the sole contributor. A similar pattern is observed for SV states (100 nm; Figure~\ref{fig:spherical-harmonic-spectro}e–h): although the magnetic moments are arranged non-uniformly in a vortex, only the vortex core contributes significantly to the magnetization, resulting in an energy distribution across degrees that resembles the SD case. For more complex vortex states—those occurring in particles larger than 500 nm in our dataset—higher-degree terms become increasingly important as particle size grows. The larger the particle, the greater the height over which non-dipolar components remain relevant. For 500 nm particles, non-dipolar terms remain essential for achieving a good fit up to approximately \SI{1}{\micro\meter} above the sources (Figure~\ref{fig:spherical-harmonic-spectro}i–l). As particle sizes increase further, this threshold rises accordingly, typically to around 2–\SI{3}{\micro\meter}, and in some cases up to \SI{5}{\micro\meter} for oblate particles (Figure~\ref{fig:spherical-harmonic-spectro}o, s). These observation are consistent with those of \cite{Bellon2025b}, who evaluated this influence using solely fitting CM models in micromagnetically simulated stray-fields.  
+\subsection{Micromagnetic benchmarking: dipolar \textit{vs} multipolar approaches}\label{approaches-comparison}
+
+To compare the effectiveness of the SH approach in a magnetic microscope setting, the stray field of all the 20 particles was predicted on a two-dimensional grid with sensor--source distances ranging from 0.05 to 10.0~$\mu$m, sampled at discrete heights. We evaluate the performance of dipolar and spherical harmonic inversion approaches, considering both linear and nonlinear formulations, across a range of particle geometries and characteristic scales. The dipolar models followed the approaches presented by \citet{Souza-Junior2024} and \citet{SouzaJunior2026}, respectively, for linear and nonlinear cases.
+
+The analysis includes the aforementioned geometries with variations in effective size, allowing a systematic assessment of model robustness under increasing geometric complexity, although without noise. To quantify the inversion accuracy by benchmarking against the reference micromagnetic model, we evaluated the angular, magnetic moment, and spatial position misfits (see Section~\ref{metrics}). 
+
+%Colors denote the inversion strategy, and marker styles indicate particle size or aspect ratio.
+
+Figure~\ref{fig:comparison-micromag-model} summarizes the results. Each column corresponds to a different particle geometry or scaling condition, while rows represent distinct metrics used. A consistent pattern across all configurations is the improved performance of nonlinear inversions relative to their linear counterparts. Nonlinear methods yield results closer to the reference values, indicating a more accurate recovery of source properties. This behavior is particularly evident in the directional and intensity misfits, where linear solutions exhibit larger variability and systematic deviations. Comparing model parameterizations, spherical harmonic approaches exhibit greater stability than dipolar approximations, particularly for sensor heights near the particles. While the performance of dipolar models degrades significantly for near-superficial, elongated, and/or flattened geometries. Both approaches provide reasonable estimates for distal sources, considering the attenuation of high-order multipole effects.
+
+%This degradation manifests as systematic biases rather than increased random scatter, indicating that the errors are primarily driven by model inadequacy rather than noise.
+
+The influence of particle geometry is clearly observed across all panels. As the aspect ratio increases, both dipolar and SH solutions exhibit larger misfits. Although the effect is substantially more pronounced for dipolar models. In contrast, SH inversions maintain relatively stable behavior, reflecting their greater flexibility in representing more complex magnetic field distributions. Especially in the SH nonlinear, which yielded lower values for angular and magnetic moment misfits, where most results for all geometries and grain sizes fall below the 1\textdegree/1\% threshold (dashed black line). The lower panels (Figure~\ref{fig:comparison-micromag-model}) reveal systematic trends in the position misfit that further highlight differences between methods. These results mostly remained under the $1.0~\mu m$ across all approaches, except for the two largest grain sizes, for which the position error increased proportionally with sensor height. On the other hand, for the SH nonlinear approach these higher misfits in position showed no significant negative influence in both directional and intensity estimations.
+
+Overall, the results demonstrate that the inversion strategy play a critical role in accurately recovering magnetic source properties. Nonlinear approaches are more consistent. However, only the SH counterpart showed reliable estimates across all tested scenarios, while nonlinear dipolar models are prone to significant systematic errors at near particles surface distances, and when applied bigger and/or non-idealized source geometries (prolates and oblates).
+
+\begin{figure}[tb!]
+  \centering
+  \includegraphics[width=1\linewidth]{paper/figures/model_comparison_with_micromag_model.png}
+\caption{
+Comparison of inversion performance metrics obtained from synthetic micromagnetic models for different source geometries, particle sizes, and inversion strategies as a function of sensor-to-sample distance. Columns correspond to spherical, prolate, oblate, and irregular particle geometries (left to right), while rows show angular, magnetic moment, and position misfits (top to bottom). Colors indicate the inversion method: linear dipole (Dip-Lin , red), nonlinear dipole (Dip-Nonlin, green), linear SH (SH-Lin, blue), and nonlinear SH (SH-Nonlin, black). Marker symbols represent different particle sizes or characteristic dimensions for each geometry, as indicated in the panel legends. Horizontal dashed lines indicate reference thresholds used for performance assessment. All metrics are shown as a function of increasing sensor height.
+}
+\label{fig:comparison-micromag-model}
+\end{figure}
+
+\subsection{Evaluation of noise level effects}
+
+Simulating the noise level is one of the key pieces needed to complete the puzzle of a ``realistic scenario''. Since the nonlinear approaches yielded more stable solutions (see Section~\ref{approaches-comparison}), these methods were applied using two distinct fixed noise levels \citep[$20$ and $100~nT$, both values reported in][]{Glenn2017}. Instead of the realistic QDM noise described by \citet{Bellon2026}, high-frequency zero-mean Gaussian noise was adopted, as the window size of the data is much smaller than a typical QDM field of view. Then, the fixed-noise forward models were calculated for the intermediate particle size of each modeled geometry: sphere ($R=0.250~\mu m$), prolate ($a=0.250 \neq b=c=0.125~\mu m$), oblate ($a=b=0.250 \neq c=0.125~\mu m$), and euhedral ($E_{max}=0.5~\mu m$). 
+
+The results are summarized in Figure~\ref{fig:comparison-micromag-model-with-noise}. Each column corresponds to a different particle geometry, while the rows represent distinct misfit metrics. The simulations show consistent behavior for both directional and intensity misfits: for sensor heights $\leq 1~\mu m$, the SH approach performs significantly better than the dipolar model. In some cases, SH results at higher noise levels ($100~nT$, solid red line) are more accurate than those for the dipolar approach at lower noise levels ($20~nT$, dashed blue line). This discrepancy decreases markedly for heights $\geq 1~\mu m$ as the higher-order signals are attenuated, but only over a limited range (around $2~\mu m$). As the distance increases further, magnetic field attenuation becomes dominant, causing the fixed noise level to be too high for reliable results. The dotted vertical lines indicate the height at which the noise exceeds 10\% of the maximum magnetic anomaly amplitude. This threshold also marks the point beyond which both approaches yield unreliable results due to a lower signal-to-noise ratio. The position misfits remained nearly identical for both approaches across the full range of heights.
 
 
 \begin{figure}[tb!]
   \centering
-  \includegraphics[width=1\linewidth]{paper/figures/fit_sphe_harm_in_different_heights.png}
-\caption{Log-normalized spherical–harmonic power spectra on the shell for each shape (columns) and size (rows). Color indicates relative power per degree $n$ (warmer = higher). As grain size increases, power shifts from low degrees (dipole/quadrupole) toward higher degrees ($n\gtrsim 4$–6), especially impactful at small sensor heights. This spectral broadening explains the failure of finite-order multipole fits (e.g., octupole) for large grains near the sensor, while spherical harmonics remain accurate by capturing higher-order content.}
-
-  \label{fig:spherical-harmonic-spectro}
+  \includegraphics[width=1\linewidth]{paper/figures/model_comparison_noise_methods.png}
+\caption{
+Comparison of inversion performance metrics obtained from synthetic micromagnetic models with fixed noise levels for different source geometries and inversion strategies as a function of sensor-to-sample distance. Columns correspond to spherical, prolate, oblate, and irregular particle geometries (left to right), while rows show angular, magnetic moment, and position misfits (top to bottom). Line colors indicate the noise level: $20~nT$ (blue) and $100~nT$ (red), while line styles represent the inversion method: dipolar nonlinear (Dip-Nonlin, dashed) and SH nonlinear (SH-Nonlin, solid). Micromagnetic structures corresponding to the intermediate particle size used for each geometry are shown as insets in the bottom row. Vertical dotted lines indicate the sensor height at which the noise level exceeds $10\%$ of the maximum magnetic anomaly amplitude for each noise scenario. All metrics are shown as a function of increasing sensor height.
+}
+\label{fig:comparison-micromag-model-with-noise}
 \end{figure}
 
 
-Fitting all the inversion routines to these non-noisy, micromagnetically coherent $b_z$ maps at different heights (Figure~\ref{fig:spherical-harmonic-model}) yields results that are fully consistent with the previous dataset. Both our new CM method (blue and black symbols) and the SH expansion using the Euler deconvolution method (pink symbols) (Figure~\ref{fig:spherical-harmonic-model}) outperform dipolar methods under all conditions. As before, dipolar fits degrade substantially for larger particles at close standoff distances; however, at sufficiently large distances, the dipolar-fit errors become smaller or at least approach the $5^\circ / 5\%$ level.
 
+\section{Real Data Application}
+
+After assessing the reliability of the SH approach with the realistic synthetic scenario, the next step involves the application in real magnetic microscopy measurements. The dataset used in this section was obtained using the Ensaio software \citep{Ensaio2025}. It consists of a high-resolution magnetic map of a stalagmite sample from Wintimdouine Cave, Morocco \citep{carmo2019speleothem}. The data were collected to investigate the magnetic remanence properties of hematite and magnetite within the sample.
+The isothermal remanent magnetization (IRM) of the sample was mapped using a QDM at the Harvard Paleomagnetics Lab, Department of Earth and Planetary Sciences, Harvard University. The IRM was imparted by applying magnetic fields of 2.7 T in the $+y$ direction and 0.3 T in the $-y$ direction. The QDM data were measured with a bias magnetic field of 0.9 mT, which was applied during the measurements and periodically reversed, and a background field of approximately 400 nT, as described by \citet{Hess2024}. The data were acquired in projected magnetic microscopy (PMM) mode and converted to the vertical component of the magnetic field ($b_z$) using a spectral approach \citep{Fu2020, Glenn2017, Lima2009}, which was processed with the aid of the \textit{QDMLab} \textit{software} \citep{Volk2022}. The imaged area covers $1410~\mu m \times 2256~\mu m$, with a grid spacing of $2.35~\mu m$, corresponding to approximately $5.76 \times 10^5$ measurement points. Data acquisition was conducted at a constant sensor–sample distance of $5~\mu m$, enabling high-resolution mapping of the magnetic field distribution. 
+
+A slice of the QDM data was selected for comparison between both nonlinear approaches, as shown in Figure~\ref{fig:comparison-real-data}. The data processing used to estimate the magnetic moment vector of each identified anomaly followed the workflow presented by \citet{SouzaJunior2026}, which consists of semi-automatic anomaly window selection, nonlinear inversion of the anomaly source, and forward modeling of its signal to subtract its influence from less pronounced neighboring anomalies. The same workflow was subsequently applied to the nonlinear SH approach. 
+
+Since the data were acquired using QDM at a sensor height of $5~\mu m$ (Figure~\ref{fig:comparison-real-data}a), substantial differences between the approaches are not expected. At this distance, higher-order signal contributions are already strongly attenuated for most particles, so the measured field is predominantly controlled by the lower-order terms, except in the case of larger grains \citep{Bellon2026}. This expectation is consistent with the results, as both approaches produced similar estimates and residual maps (Figure~\ref{fig:comparison-real-data}c and f) and magnetic moment (Figure~\ref{fig:comparison-real-data}d). However, minor discrepancies were observed, either for the larger anomaly, where residual higher-order contributions occurred, or for weaker anomalies that were highly affected by background magnetic shifts, noise levels, or influenced by the stringer sources. These conditions may still influence the inversion. 
 
 \begin{figure}[tb!]
   \centering
-  \includegraphics[width=1\linewidth]{paper/figures/model_comparison_with_sphe_harm.png}
-\caption{Planar $b_z$ predictions from the fitted spherical–harmonic models at multiple sensor heights (marker shapes) and grain sizes (colors), for sphere (a,e), prolate (b,f), oblate (c,g), and euhedral (d,h). Top row: angular misfit (degrees) between recovered and true dipole directions; bottom row: relative dipole-moment misfit (\%). Dashed gray lines mark practical targets (5$^\circ$ and 5\%). SH fits (magenta) maintain low misfits over the widest range of heights and sizes, whereas octupole models (green/black) deteriorate for larger grains at low $h$.}
+  \includegraphics[width=1\linewidth]{paper/figures/real_data_results.png}
+\caption{
+Comparison between nonlinear dipolar and spherical harmonic (SH) inversion results fot real QDM data. Panel (a) shows the observed magnetic field and the selected zoomed-in anomaly windows (Figure~\ref{fig:comparison-real-data-zoom}). Panels (b) and (c) correspond to the nonlinear dipolar inversion result and its residuals. Panel (d) shows the stereographic projection with the recovered magnetic moment directions for both approaches, while panels (e) and (f) show the predicted $bz$ field and residuals for the nonlinear SH approach.
+}
+\label{fig:comparison-real-data}
+\end{figure}
 
-  \label{fig:spherical-harmonic-model}
+To further illustrate the behavior of both inversion strategies when applied to real QDM data, three selected anomalies were examined in greater detail through zoomed-in views of representative cases (Figure~\ref{fig:comparison-real-data-zoom}). These examples allow a direct visual comparison between the observed magnetic field patterns and the corresponding forward responses predicted by the nonlinear dipole and spherical harmonic approaches, as well as their recovered magnetic moment directions. 
+
+The first case (Figure~\ref{fig:comparison-real-data-zoom}a) corresponds to a strongly dipolar and well-isolated anomaly, used as a reference example for which both methods are expected to yield similar results. Consistent with this expectation, both approaches reproduced the observed dipolar pattern with high fidelity, yielding comparable source locations and magnetic moment directions. The second case (Figure~\ref{fig:comparison-real-data-zoom}b) represents an anomaly affected by strong external interference, located within a region of positive field offset and superimposed on the tail of the strongest anomaly in the selected slice. In this more complex setting, differences between the modeled responses become more evident, although the SH approach is more consistent with the direction of the imparted IRM. The third case (Figure~\ref{fig:comparison-real-data-zoom}c) corresponds to a weak and small-amplitude anomaly, providing a more challenging low-signal scenario. In this case, the dipolar approach struggled due to the weaker signal and the limited spatial extent of the anomaly, while the SH provides coherent estimates for both position and magnetic moment, as evidenced by the similar observed and predicted maps. Taken together, these examples indicate that both approaches perform similarly for well-behaved isolated anomalies, whereas the observed discrepancies suggest a slightly more refined estimate from the SH approach, which could become increasingly significant as the sensor height decreases.
+
+\begin{figure}[tb!]
+  \centering
+  \includegraphics[width=1\linewidth]{paper/figures/zoom_real_data_results.png}
+\caption{
+Detailed comparison between nonlinear dipolar (Dip) and spherical harmonic (SH) inversion results for three representative anomalies extracted from the real QDM dataset. Rows correspond to three selected cases representing distinct signal characteristics: (a) an isolated dipolar anomaly, (b) an anomaly influenced by external magnetic contributions, and (c) a weak low-amplitude anomaly. Columns show the observed magnetic field, the nonlinear dipolar predicted $b_z$ field, the nonlinear SH predicted $b_z$ field, and the corresponding stereographic projections with the recovered magnetic moment directions for both approaches. Estimated source positions are indicated within the predicted field maps.
+}
+\label{fig:comparison-real-data-zoom}
 \end{figure}
 
 
 
+\section{Discussions}
 
-\section{Discussions and Final Remarks}
+By incorporating higher-order magnetic moments, multipole fitting provides additional degrees of freedom to capture the magnetic complexity of remanence carriers. This approach is particularly valuable in high-resolution magnetic maps that resolve quadrupolar and higher-order features, or when modeling non-uniform and clustered magnetic sources.
 
-\subsection{The applicability of Cartesian multipolar models}
+For the ground-truth models, the superior performance of SH models observed in our experiments is a direct consequence of their ability to capture the stray fields generated by non-spherical geometries and complex internal magnetic structures. The near-surface stray fields of these models reveal that for grains with significant shape anisotropy or those exhibiting vortex state domains, the dipolar term accounts for only a fraction of the total magnetic signal. The SH inversion is more capable of fitting the higher-order magnetic signals without biasing the degree one coefficients, leading to the significantly lower residuals reported in our benchmarks. Thus, this performance of the tested inversion strategies depends primarily on sensor height and source geometry. For most simulated cases, both nonlinear approaches converged to similar solutions at larger sensor-to-sample distances, whereas discrepancies became more evident for larger grains and at lower heights. This behavior is consistent with the rapid distance-dependent attenuation of higher-order magnetic field components \citep{Bellon2026, CortesOrtuno2022}. As the observation height increases, the external field progressively approaches a dipolar signature, reducing the practical advantage of more flexible source representations. 
 
-Our CM model significantly improves field estimation near sources -- particularly when higher-order components significantly contribute to the signal --  when compared to purely dipolar fits. Unlike SH methods, ours does not rely on particle geometry, making it suitable for use when only center positions are known (or estimated), which perfectly fits a strategy that cannot rely on tomographic measurements to detect the source positions.
+However, this behavior should not be generalized to lower sensor heights, where higher-order terms become increasingly relevant. The comparison using real QDM data broadly supports this interpretation. For isolated and well-defined anomalies, both approaches yielded similar solutions, whereas more noticeable differences emerged for weak or externally perturbed signals. Therefore, under standard QDM acquisition conditions, the choice between the two nonlinear approaches may have a limited practical impact for most particle sizes. Although experimental data introduce additional sources of uncertainty not present in the synthetic tests, the same general trends were observed.
 
-In our models, we do not analyze the effect of noise, as our goal is to provide a mathematical demonstration of the reliability of the proposed approach in generating multipolar sources in a phenomenological manner comparable to SH fitting. This equivalence is demonstrated in the final Results section, where we fit micromagnetically generated stray-field maps of SD, SV, and MV magnetic structures. The key difference between the two approaches—and the superior performance of SH at short sensor–sample distances—lies in the power-spectrum fitting (Fig.~\ref{fig:spherical-harmonic-spectro}). As grain size increases and the sensor approaches the sample, spectral energy shifts toward higher degrees ($n \gtrsim 4$–6), exceeding the span of an octupole. SH fitting naturally accommodates these higher-order terms and consistently projects them onto the measurement plane.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Euler Deconvolution as a Strategic Seed for Expansion Centers}
 
-Yet, center choice is a primary control on performance. The position-error experiments (Figs.~\ref{fig:angular_misfit_position_error_comparison}--\ref{fig:moment_misfit_position_error_comparison}) show sharp minima in angular and moment misfits at zero error and symmetric growth with $|\Delta\mathbf{r}|$, with the steepest sensitivity along $\Delta z$. Initializing the expansion center with Euler deconvolution produces the minima near $\Delta\mathbf{r}\!\approx\!0$, and an optional Nelder–Mead refinement widens the basin of sub-degree (direction) and sub-percent (moment) accuracy, particularly for clustered or asymmetric sources.
+The efficacy of SH expansions in magnetic microscopy strongly depends on the accurate definition of the source expansion center. The ED solution provides first-order estimates of the source coordinates $(x_c, y_c, z_c)$ without requiring prior information regarding particle shape or size. By independently constraining source location before coefficient estimation, the original highly nonlinear optimization problem is transformed into a substantially better-conditioned inversion problem. This separation reduces the number of free parameters during coefficient estimation and improves convergence stability for local planar inversions.
 
-In realistic scenarios, noise can be an important limitation when selecting an appropriate model. We have recently tested applications of the CM model \cite{Bellon2025b} using physically accurate QDM noise modeling and demonstrated that our inversion procedures are sufficiently robust to reliably predict the magnetic moment. However, we also showed that the rapid spatial decay of non-dipolar contributions, combined with measurement noise, can significantly limit the effectiveness of fitting higher-order multipolar components. In this aspect, for well-separated submicron sources at distances greater than $\approx \SI{2}{\micro\meter}$, a dipolar model has a similar performance. 
+In addition, the Euler-derived estimate provides an efficient starting point for subsequent nonlinear refinements. When required, the initial location can be further optimized using derivative-free search algorithms such as the Nelder-Mead method \citep{Nelder-Mead1965}, minimizing local residual RMS values. As demonstrated by the micromagnetic models, this refinement significantly improves solution accuracy and stability, particularly for non-ideal source geometries. Together, these steps create a flexible framework capable of extracting complex magnetic signatures directly from measured anomalies while relying only on a single measurement plane. Consequently, higher-order magnetic characterization can be performed without dependence on auxiliary imaging techniques.
 
-\subsection{Cartesian Multipole vs Euler deconvolution guided Spherical Harmonics expansion}
+Despite these advantages, some limitations remain. Higher-order spherical harmonic terms become progressively more sensitive to high-frequency noise and positioning uncertainties, particularly at very low sensor-to-sample distances where short-wavelength magnetic components dominate the observed field. As noted by \citet{Lima2023}, increasing the expansion degree beyond the information content of the data can lead to overfitting, where higher-order coefficients begin fitting measurement noise rather than physically meaningful signal components.
 
-Multipole fitting, whether in Cartesian or spherical harmonic form, provide a more physically complete model for capturing the magnetic complexity of remanence carriers. They are especially useful when the goal is to resolve internal structures, account for multi-domain configurations, or interpret field curvature near the source. Their applicability is heightened when high-resolution maps show quadrupolar or higher-order features, or when dealing with non-uniform or clustered sources like silicate inclusions or magnetite aggregates.
+The sensitivity of source position estimation is also partially inherited from the ED formulation itself, which relies on directional derivatives of the magnetic field and tends to affect vertical coordinate estimates more strongly. This issue can be mitigated through subsequent nonlinear optimization (Section~\ref{nonlinear-inversion}) or through more robust approaches for determining expansion centers \citep[\textit{e.g.} Euler inversion,][]{Uieda2025}. Additionally, the intrinsic non-uniqueness of multipolar representations implies that different coefficient combinations may generate similar external magnetic fields. Therefore, the final solution may still depend on regularization choices, local anomaly isolation, and the selected maximum expansion degree.
 
-One notable advantage of our CM model is its simplified implementation. Unlike spherical harmonics, which require special functions such as associated Legendre polynomials and demand careful handling of angular singularities, the Cartesian approach is more direct and can be implemented using standard vector calculus. This formulation also tends to exhibit improved numerical stability, particularly in local problems with planar geometries, since it avoids the singularities at the poles that are inherent in spherical coordinates. Furthermore, Cartesian multipole terms—such as dipole vectors and quadrupole or octupole tensors—correspond directly to physically interpretable quantities, which makes the inversion results more intuitive to analyze. Another benefit is the compatibility with modern optimization frameworks that support automatic differentiation. By expressing the field and its derivatives in Cartesian form, it becomes easier to integrate the model into open-source libraries like Magali/Fatiando a Terra, enabling gradient-based inversion and uncertainty quantification. Additionally, for highly localized sources such as those studied in magnetic microscopy, the Cartesian formulation is more efficient because it does not require a global coordinate system and allows for flexible modeling within confined spatial domains.
+Nevertheless, the ED-seeded approach remains computationally attractive and scalable for large magnetic microscopy datasets. Because the source location is independently constrained prior to coefficient estimation, the dimensionality of the nonlinear optimization problem is substantially reduced. This separation improves numerical stability and makes the method well-suited for the increasingly large and high-resolution datasets generated by modern magnetic microscopy systems.
 
-Despite these strengths, the Cartesian multipole expansion also presents some drawbacks. Unlike spherical harmonics, which form an orthonormal basis and thus promote parameter decoupling and inversion stability, Cartesian multipole tensors lack orthogonality. This can lead to stronger parameter correlations. Higher-order terms, such as quadrupole and octupole contributions, require symmetric, traceless tensors of increasing rank, which significantly increases the number of independent variables and adds to the implementation complexity. Besides -- for highly complex anomalies -- the number of Cartesian tensor components grows more rapidly than in the expansion order, raising the risk of overparameterization, which can be particularly problematic for underdetermined inverse problems.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Implications for High-Resolution Paleomagnetic Microscopy}
 
-Nonetheless, as shown, SH can be strongly sensitive the choice of coordinate origin. Even small shifts can substantially alter the higher-order terms, making the inversion more vulnerable to errors in source localization. 
+Since the findings of \citet{Berndt2016}, relatively few magnetic microscopy applications have been directed toward paleomagnetic studies because the number of magnetic grains required to recover statistically reliable paleodirections was considered prohibitively large for these techniques. Nearly a decade later, however, \citet{Bellon2025a} demonstrated through micromagnetic modeling of single-vortex (SV) grains that the number of grains required may be orders of magnitude lower than previously assumed, ranging from several hundred to a few thousand grains for bias fields $\geq 2~\mu T$. These results substantially changed the perspective on the role of magnetic microscopy in paleomagnetism. If reliable directional information can be obtained from much smaller grain populations, the emphasis shifts from measuring large samples toward improving the characterization of individual grains and small particle assemblages.  
 
+This shift naturally motivates the development of magnetic microscopy systems with increasingly higher spatial resolution and progressively smaller sensor-to-sample distances, as observed in recent Quantum Scanning Microscopes (QSM) developments \citep[\textit{e.g.}][]{Ahmed2026}. Such improvements are desirable because they enable the magnetic signal of individual grains and local remanence structures to be resolved with greater fidelity. However, moving closer to the source also places measurements within the near-field regime, where higher-order magnetic contributions become increasingly significant, particularly for non-uniform grains and interacting particle assemblages \citep{Bellon2026, CortesOrtuno2022, CortesOrtuno2021}.  Under these conditions, purely dipolar approaches may no longer provide sufficiently accurate representations of the measured magnetic field. Since multipole terms of degree $m$ scale with $1/r^{m+2}$, the contribution of higher-order components decays progressively faster with distance from the source. Consequently, lower-order terms dominate the far-field behavior, whereas near-field measurements retain substantial contributions from higher-order harmonics. These additional degrees of freedom are required to capture the short-wavelength spatial variations and complex stray-field structures associated with surface-proximal sources.
 
-%Tomographic multipole models, in particular, allow for nonparametric and flexible descriptions of the source distribution. They enable the estimation of continuous spatial variations in magnetization intensity and orientation, assist in identifying depth structure and internal features of extended sources when properly regularized, and support global inversions that integrate signals across entire scanned regions rather than focusing on isolated grains. Despite these strengths, applying tomographic multipole models to surface-acquired 2D magnetic data comes with several limitations. Most notably, the inversion problem is ill-posed and non-unique: magnetic fields measured over a surface do not uniquely determine the internal source configuration, making results highly sensitive to regularization and prone to a range of equivalent solutions. Truncating the expansion at a finite order can introduce edge effects and artificial oscillations, especially near scan boundaries. The inclusion of higher-order terms may also lead to overfitting noise or unresolved features, particularly in data with low signal-to-noise ratios. Computational complexity increases substantially as the number of expansion terms grows, demanding more time and memory. Furthermore, harmonic coefficients describe global properties of the field, making it difficult to localize individual grains—a significant drawback in densely packed samples. These challenges suggest that spherical harmonic-based tomographic models should be employed with caution, ideally supported by strong prior information or volumetric measurements that help constrain the inversion.
+The framework proposed here directly addresses this emerging regime. By combining spherical harmonic expansions with Euler deconvolution-based estimates of the expansion center, complex magnetic signatures can be modeled with substantially greater stability and physical realism. This approach enables high-resolution magnetic microscopy data to be interpreted beyond the dipolar approximation while remaining computationally practical for large datasets. Consequently, these developments may help bridge the gap between modern magnetic microscopy capabilities and quantitative paleomagnetic applications, particularly for the analysis of small magnetic carriers, complex remanence structures, and weakly magnetized geological materials.
 
-
-
-
-
-% \section{Discussion}
-
-% Multipole models markedly improve field estimation near sources, especially when higher-order components are present, and they do so without assuming particle geometry—useful when only center positions are known. In magnetic microscopy, a pure dipole model remains attractive for isolated, nearly uniform grains at sensor heights large compared to grain size, or when the goal is rapid screening by total moment and orientation. Under these conditions, dipole inversion (aided by spatial priors like Euler deconvolution) is robust and fast. However, complex or aggregated sources, proximity to the sensor, and spatially structured residuals after dipole fitting expose the limits of the point-source assumption and can bias positions, directions, and intensities.
-
-% Spherical harmonics and finite-order Cartesian multipoles provide a more complete description when the field exhibits curvature beyond dipolar. Our micromagnetic tests confirm that SH fits reproduce shell data with low residuals across shapes and sizes (Fig.~\ref{fig:spherical-harmonic-fitting}), and the same coefficients predict plane maps with high fidelity over a broad range of heights (Fig.~\ref{fig:spherical-harmonic-model}). In contrast, finite-order multipoles (e.g., octupole) degrade for larger grains at low heights. The shell power spectra (Fig.~\ref{fig:spherical-harmonic-spectro}) explain this breakdown: as grains grow and the sensor approaches the sample, spectral energy shifts toward higher degrees ($n\gtrsim4$–6) that exceed an octupole’s span, while SH accommodates these terms and projects them consistently to the plane.
-
-% Center choice is a primary control on performance. The position-error experiments (Figs.~\ref{fig:angular_misfit_position_error_comparison}--\ref{fig:moment_misfit_position_error_comparison}) show sharp minima in angular and moment misfits at zero error and symmetric growth with $|\Delta\mathbf{r}|$, with the steepest sensitivity along $\Delta z$. Initializing the expansion center with Euler deconvolution produces the minima near $\Delta\mathbf{r}\!\approx\!0$, and an optional Nelder–Mead refinement widens the basin of sub-degree (direction) and sub-percent (moment) accuracy, particularly for clustered or asymmetric sources.
-
-% Noise and model order introduce the usual bias–variance trade-off because planar coverage breaks SH orthogonality. We therefore select the smallest degree $N$ on the $R^2$ (or AIC/BIC) plateau and use weak Tikhonov damping; bootstrap medians with P16–P84 intervals reduce estimator skew under noise and outliers. Dipole and octupole fits are less variance-sensitive at large heights but become biased when unmodeled higher degrees are present; SH shows the opposite pattern—low bias when $N$ spans the spectrum, with variance controlled by conservative $N$ and mild damping.
-
-% Practical guidance follows from these results. Use a dipole model when grains are isolated, $h/\text{grain size}\!\gtrsim\!5$, and residuals are unstructured. Use octupole when residual maps display clear quadrupolar curvature yet spectra remain compact ($n\!\lesssim\!3$). Prefer SH when grains are large or near the sensor, sources overlap, or plane-to-plane predictions are required; start from an Euler-based center and refine if misfits remain structured. For paleomagnetic applications, directional accuracy scales with both field strength and the number of resolved anomalies: strong fields ($\gtrsim10~\mu$T) need only a few hundred anomalies for unbiased directions, whereas weak fields demand substantially more and may be microscopy-limited. For paleointensity, bulk measurements approach but do not exactly recover the applied field even under favorable conditions, while SH-based inversions on magnetic images converge more closely—especially when using bootstrap medians—because spatially resolved data allow exclusion or down-weighting of altered or non-Arai grains.
-
-% Limitations remain. Ill-posedness on planes, center sensitivity, and noise–variance trade-offs are fundamental constraints; truncation can introduce edge effects if $N$ is oversized, and coefficients are global descriptors that complicate grain-level attribution in dense assemblages. Future work should incorporate joint $(B_x,B_y,B_z)$ and multi-height data, physics-informed priors (e.g., micromagnetic texture or grain maps) to reduce non-uniqueness, automated center refinement, and adaptive degree selection to stabilize SH fits at scale.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% \section{Conclusion}
-% We introduced a Cartesian multipole fitting method for magnetic microscopy that models higher-order magnetic signals without spherical harmonics or size/shape assumptions. Results on synthetic data demonstrate improved accuracy over traditional dipole fitting. Future work will apply the method to real datasets and explore further extensions.
-
-% Using a Cartesian multipole expansion provides a viable and often advantageous alternative to spherical harmonics, especially in local or planar problems where physical interpretability, numerical stability, and implementation simplicity are prioritized. However, it comes at the cost of reduced orthogonality, increased parameter coupling, and greater sensitivity to coordinate choice. The decision between these formulations should be guided by the geometry of the problem, the available data coverage, and the specific goals of the inversion.
 
 \section{Conclusions}
 
-We presented and compared two complementary frameworks for modeling near-source magnetic fields in microscopy: a Cartesian multipole (CM) model and an adapted spherical–harmonic (SH) formulation. The Cartesian approach captures dipole, quadrupole, and octupole contributions through successive derivatives of the potential, requires no size/shape assumptions, integrates cleanly with gradient-based optimization, and offers highly interpretable parameters in local, planar settings. The SH approach expands the scalar potential in a complete basis by degree and order and projects consistently from enclosing shells to arbitrary planes, providing a natural spectral diagnostic of model adequacy.
-
-Synthetic benchmarks and micromagnetic tests show clear regimes of preference. For isolated, nearly uniform grains at sensor heights large relative to grain size, dipole fits remain efficient and reliable. Finite-order Cartesian multipoles help when residual curvature is evident but the spectrum remains compact. For larger grains, overlapping sources, or small sensor heights—where shell spectra shift power to higher degrees ($n\gtrsim4$–6)—finite-order multipoles bias directions and moments, whereas SH fits remain accurate by accommodating the required degrees and transferring them robustly to measurement planes. Across all models, center choice is a primary control on performance: seeding the expansion center with Euler deconvolution and optionally refining it by RMS minimization yields sub-degree directional and sub-percent moment errors over the widest range of conditions.
-
-These modeling and inversion frameworks improve the interpretive capability of micromagnetic analyses as spatial resolution increases and sensor–sample standoff distances are reduced. Higher-resolution field maps enhance higher-order spectral content and reveal source overlap that cannot be captured by dipole-only models. The combined use of Euler-centered initialization, optional center refinement, and conservative spherical-harmonic or Cartesian-multipole modeling provides a scalable and robust approach for incorporating this information while maintaining numerical stability.
+This study evaluated a spherical harmonic expansion approach to estimate degree-1 coefficients and infer the dipole moment from two-dimensional $B_z$ magnetic microscopy observations, using Euler deconvolution to constrain the expansion center. Synthetic experiments based on micromagnetic models demonstrated that the relative performance of the inversion approaches depends strongly on sensor-to-sample distance and source geometry. At larger distances, solutions progressively converge toward dipolar behavior due to the attenuation of higher-order magnetic contributions, whereas lower sensor heights emphasize complex magnetic structures that require richer source representations. The use of Euler deconvolution as an initial estimate for the expansion center substantially improves inversion conditioning and reduces the dimensionality. When combined with the nonlinear refinement, this approach stably retrieves multipolar source models directly from single observation plane magnetic anomalies. As magnetic microscopy systems continue moving toward higher spatial resolutions and smaller sensor-to-sample distances, measurements increasingly enter a near-field regime where higher-order magnetic signatures become significant components of the observed field. Under these conditions, approaches relying exclusively on dipolar assumptions may become insufficient. The approach presented here provides a physically consistent alternative capable of representing this increased complexity while remaining computationally tractable. These developments may contribute to expanding the application of magnetic microscopy to quantitative paleomagnetic studies, particularly for the investigation of small magnetic carriers, rare geological materials, and complex remanence structures.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Open research}
 
-The Python source code used to produce all results and figures presented here
-is available at \url{https://github.com/\GitHubRepository} and
-\url{https://doi.org/\ArchiveDOI} under the MIT open-source license.
+The Python source code used to produce all results and figures presented here and the QDM magnetic microscopy data used in this study are available from \citet{figshare}, which can also be found on \url{https://github.com/\GitHubRepository} under the MIT (source code), CC-BY (text and figures), and CC-0 (data) licenses.
 
-Here we should cite all of the main software used, like Jupyter, numpy, scipy,
-matplotlib, Fatiando, etc.
-
-Cite any data sources as well.
-
-
+We made use of the following Python packages in this study: NumPy \citep{Harris2020} for array manipulation and linear algebra; SciPy \citep{2020SciPy-NMeth} for linear algebra routines and nonlinear optimization; scikit-image \citep{VanderWalt2014} for image processing and blob detection; Matplotlib \citep{Hunter2007} for generating figures and stereographic projections; Verde \citep{verde2018} for grid generation and least-squares solutions; Harmonica \citep{harmonica2020} for upward continuation, magnetic data processing, and the computation of Schmidt semi-normalized associated Legendre functions and their derivatives; Choclo \citep{choclo2022} for optimized forward-modeling kernel functions; Numba \citep{lam2015numba} for just-in-time compilation; and xarray \citep{hoyer2017xarray} for handling coordinate-aware multidimensional datasets.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Acknowledgements}
 
-We are indebted to the developers and maintainers of the open-source software
-without which this work would not have been possible.
-Acknowledge any non-author contributors to this study.
-Statement about funding.
+% We gratefully acknowledge the Laboratório de Paleomagnetismo e Magnetismo de Rochas (USPmag, Universidade de São Paulo) for maintaining and providing access to samples, and the Harvard Paleomagnetics Lab (Department of Earth and Planetary Sciences, Harvard University) for providing the facilities and equipment used for the QDM and bulk measurements. 
+
+We sincerely acknowledge the developers and maintainers of the open-source software, whose contributions were essential to the completion of this work. This research was supported by grants 2021/08379-5 and 2023/13372-5 from the Fundação de Amparo à Pesquisa do Estado de São Paulo (FAPESP), grant IES\textbackslash{}R3\textbackslash{}213141 from the Royal Society, and grant PRPI 22.1.09345.01.2 from Universidade de São Paulo.
+
+
 
 % Thank the editors and reviewers after review.
