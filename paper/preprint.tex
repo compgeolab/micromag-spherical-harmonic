@@ -13,14 +13,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Set variables with the title, authors, etc.
 % \newcommand{\Title}{Cartesian multipole modeling for magnetic microscopy: Beyond dipoles without spherical harmonics}
-\newcommand{\Title}{Multipole Modeling for Magnetic Microscopy: Cartesian and Spherical Approaches Constrained by Euler Deconvolution}
+\newcommand{\Title}{Multipole Modeling for Magnetic Microscopy Constrained by Euler Deconvolution}
 
 
 \newcommand{\TitleShort}{Multipoles Inversion from Euler Deconvolution}
 
-\newcommand{\Year}{2023}
-\newcommand{\SubmittedOn}{2023/02/28}
-\newcommand{\PublishedOn}{2023/02/28}
+\newcommand{\Year}{2026}
+\newcommand{\SubmittedOn}{2026/08/07}
+\newcommand{\PublishedOn}{2026/08/07}
 
 \newcommand{\AuthorShort}{Souza-Junior \textit{et al.}}
 \newcommand{\Authors}{%
@@ -29,12 +29,15 @@ Ualisson D. Bellon\textsuperscript{3*},
 Leonardo Uieda\textsuperscript{1},
 Ricardo I. F. Trindade \textsuperscript{1},
 Roger R. Fu \textsuperscript{2},
-Wyn Williams \textsuperscript{3}
+Wyn Williams \textsuperscript{3}, and
+Arthur Siqueira-Macedo \textsuperscript{1}
 }
-\newcommand{\Email}{contact-email@university.org}
+\newcommand{\Emailgelson}{gelson.ferreiral@iag.usp.br}
+\newcommand{\Emailualisson}{ualisson.bellon@ed.ac.uk}
+
 \newcommand{\Corresponding}{%
-  Corresponding author: Gelson F. Souza-Junior <\href{mailto:\Email}{\Email},
-  Ualisson D. Bellon <\href{mailto:\Email}{\Email}>
+  Corresponding authors: Gelson F. Souza-Junior <\href{mailto:\Email}{\Emailgelson}>,
+  Ualisson D. Bellon <\href{mailto:\Email}{\Emailualisson}>
 }
 \newcommand{\Affiliations}{%
   \textsuperscript{1} Universidade de São Paulo, Brazil;
@@ -43,11 +46,11 @@ Wyn Williams \textsuperscript{3}
   \textsuperscript{*} Co-first authorship;
 }
 
-\newcommand{\Journal}{Geochemistry, Geophysics, Geosystems}
+\newcommand{\Journal}{Journal of Geophysical Research: Solid Earth}
 \newcommand{\JournalDOI}{YYYYY/YYYYYYY}
 \newcommand{\PreprintDOI}{XXXXX/XXXXXXX}
-\newcommand{\ArchiveDOI}{DOI_FOR_THE_REPO_ARCHIVE}
-\newcommand{\GitHubRepository}{compgeolab/paper-template}
+\newcommand{\ArchiveDOI}{10.5281/zenodo.20446907}
+\newcommand{\GitHubRepository}{compgeolab/micromag-spherical-harmonic}
 
 \newcommand{\Keywords}{%
   keyword1; keyword2; keyword3;
@@ -237,17 +240,16 @@ Wyn Williams \textsuperscript{3}
 \begin{summarybox}
   \noindent
   \textbf{Disclaimer:}
-  %This is a non-peer reviewed preprint of an article submitted for publication
-  %in \textit{\Journal{}}. It is available from EarthArXiv at
-  %\url{https://doi.org/\PreprintDOI}.
+  This is a non-peer reviewed preprint of an article submitted for publication
+  in \textit{\Journal{}}. It is available from EarthArXiv. %at \url{https://doi.org/\PreprintDOI}.
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % Comment the above and uncomment below after publication in a journal
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  This is a peer-reviewed author-produced postprint of the article
-  ``\AuthorShort{} (\Year). \Title. \textit{\Journal}.
-  doi:\href{https://doi.org/\JournalDOI}{\JournalDOI}''.
-  The postprint is available from EarthArXiv at
-  \url{https://doi.org/\PreprintDOI}.
+  %This is a peer-reviewed author-produced postprint of the article
+  %``\AuthorShort{} (\Year). \Title. \textit{\Journal}.
+  %doi:\href{https://doi.org/\JournalDOI}{\JournalDOI}''.
+  %The postprint is available from EarthArXiv at
+  %\url{https://doi.org/\PreprintDOI}.
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   \\[0.25cm]
   \noindent
@@ -257,9 +259,9 @@ Wyn Williams \textsuperscript{3}
   You can find it at \url{https://doi.org/\ArchiveDOI} and
   \url{https://github.com/\GitHubRepository}.
   \\[0.25cm]
-  \noindent
-  \textbf{Keywords:} \Keywords{}
-  \\[0.25cm]
+  % \noindent
+  % \textbf{Keywords:} \Keywords{}
+  % \\[0.25cm]
   \noindent
   \textbf{\textcopyright{} \Year{} The Authors.}
   Available under the \href{https://creativecommons.org/licenses/by/4.0/}{Creative Commons Attribution 4.0 International License}
