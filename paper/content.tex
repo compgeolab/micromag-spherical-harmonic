@@ -128,7 +128,7 @@ The optimal normalized coefficient vector $\mathbf{w}$ is obtained by solving th
 \noindent
 where $I$ is the identity matrix. Once an estimate of $\mathbf{w}$ is obtained, we calculate the spherical harmonic Gauss coefficients as $\mathbf{c} = \mathbf{S}^{-1}\mathbf{w}$.
 
-Another advantage of the normalization of the Jacobian matrix is that the range of acceptable values for the regularization parameter $\lambda$ will be more predictable since it won't depend on the model and data dimensions as strongly. Here, we use a regularization parameter of $\lambda = 10^{-1}$, which was empirically selected as the value that best preserves the benchmark results obtained from the micromagnetic particle simulations (see Section~\ref{numerical_simulation}).
+Another advantage of the normalization of the Jacobian matrix is that the range of acceptable values for the regularization parameter $\lambda$ will be more predictable since it won't depend on the model and data dimensions as strongly. Here, we use a regularization parameter of $\lambda = 10^{-1}$, which was empirically selected (shown in Figure~S1) as the value that best preserves the benchmark results obtained from the micromagnetic particle simulations (see Section~\ref{numerical_simulation}).
 
 Once the Gauss coefficients have been estimated, the Cartesian components of the magnetic moment (in $Am^2$) of a dipolar source located at the expansion center $(x_c, y_c, z_c)$ are calculated directly from the first-degree coefficients. Following \citet{Blakely1996},
 
