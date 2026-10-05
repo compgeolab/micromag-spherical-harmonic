@@ -187,99 +187,143 @@ class SphericalHarmonicsBz:
 
 
     # def update_location(self, coordinates, data):
-        
-    #     def objective_function(location):
 
-    #         self.location = location
-            
-    #         self.fit(coordinates, data.bz)
-    #         predicted = self.predict(coordinates, self.min_degree, self.max_degree)
-    #         residuals = data.bz - predicted.ravel()
-    #         rms = np.sqrt(np.mean(residuals**2))
-
-    #         return rms
-    
-    #     result = sp.optimize.minimize(
-    #         objective_function,
-    #         x0=self.location,
-    #         method="Nelder-Mead",
-    #         tol=1.0e-2,
-    #         options={"maxiter": 100}
-    #     )
-    #     if result.success:
-    #         self.location = result.x
-        
-    #     return self
-
-
-    # def update_location(self, coordinates, data):
-    
     #     original_location = self.location.copy()
-    
+
+    #     if hasattr(data, "bz"):
+    #         values = data.bz
+    #     else:
+    #         values = data
+
     #     def objective_function(z):
-    
+
     #         location = original_location.copy()
     #         location[-1] = z[0]  # only the z coordinate
-    
+
     #         self.location = location
-    
-    #         self.fit(coordinates, data.bz)
-    
+
+    #         self.fit(coordinates, values)
+
     #         predicted = self.predict(coordinates, self.min_degree, self.max_degree)
-    #         residuals = data.bz - predicted.ravel()
-    
+    #         residuals = values - predicted.ravel()
+
     #         return np.sqrt(np.mean(residuals**2))
-    
+
     #     result = sp.optimize.minimize(
     #         objective_function,
-    #         x0=[self.location[-1]],  # only the z coordinate
+    #         x0=[self.location[-1]],
     #         method="Nelder-Mead",
     #         tol=1.0e-2,
     #         options={"maxiter": 500}
     #     )
-    
+
     #     if result.success and np.isfinite(result.x[0]):
     #         self.location[-1] = result.x[0]
     #     else:
     #         self.location = original_location
-    
+
     #     return self
-        
 
-    def update_location(self, coordinates, data):
 
-        original_location = self.location.copy()
-
+    def update_location(self, coordinates, data, update_only_z=True):
+        """
+        Refine the source location by minimizing the RMS misfit between
+        observed and predicted magnetic anomalies.
+    
+        Parameters
+        ----------
+        coordinates : tuple
+            Coordinates of the observation points.
+        data : xarray.DataArray, pandas.Series, or numpy.ndarray
+            Observed magnetic field data. If the object has a ``bz`` attribute,
+            it is used as the observed data.
+        update_only_z : bool, default=True
+            If True, only the vertical (z) coordinate is optimized. If False,
+            all three coordinates (x, y, z) are optimized.
+    
+        Returns
+        -------
+        self : SphericalHarmonicsBz
+            The model with the refined source location.
+        """
+    
         if hasattr(data, "bz"):
             values = data.bz
         else:
             values = data
-
-        def objective_function(z):
-
-            location = original_location.copy()
-            location[-1] = z[0]  # only the z coordinate
-
-            self.location = location
-
+    
+        original_location = np.asarray(self.location, dtype=float).copy()
+    
+        if update_only_z:
+            # Optimize only z. The initial value is normalized to unit magnitude
+            # so that the Nelder-Mead simplex operates in a normalized space.
+            scale = np.abs(original_location[-1])
+    
+            if scale == 0:
+                scale = 1.0
+    
+            normalized_location = np.array(
+                [original_location[-1] / scale]
+            )
+    
+        else:
+            # Normalize each coordinate independently so that x, y, and z
+            # have comparable scales within the optimization simplex.
+            scale = np.abs(original_location)
+            scale[scale == 0] = 1.0
+    
+            normalized_location = original_location / scale
+    
+        def objective_function(location):
+    
+            if update_only_z:
+                # Convert the normalized z coordinate back to physical units
+                # while keeping x and y fixed at their original values.
+                physical_location = original_location.copy()
+                physical_location[-1] = location[0] * scale
+    
+            else:
+                # Convert all normalized coordinates back to physical units.
+                physical_location = location * scale
+    
+            self.location = physical_location
+    
+            # Refit the spherical-harmonic coefficients for each trial location.
             self.fit(coordinates, values)
-
-            predicted = self.predict(coordinates, self.min_degree, self.max_degree)
+    
+            predicted = self.predict(
+                coordinates,
+                self.min_degree,
+                self.max_degree
+            )
+    
             residuals = values - predicted.ravel()
-
-            return np.sqrt(np.mean(residuals**2))
-
+            rms = np.sqrt(np.mean(residuals**2))
+    
+            return rms
+    
         result = sp.optimize.minimize(
             objective_function,
-            x0=[self.location[-1]],
+            x0=normalized_location,
             method="Nelder-Mead",
             tol=1.0e-2,
-            options={"maxiter": 500}
+            options={"maxiter": 100}
         )
-
-        if result.success and np.isfinite(result.x[0]):
-            self.location[-1] = result.x[0]
+    
+        if result.success and np.all(np.isfinite(result.x)):
+    
+            if update_only_z:
+                # Recover the optimized physical z coordinate while keeping
+                # the original x and y coordinates unchanged.
+                self.location = original_location.copy()
+                self.location[-1] = result.x[0] * scale
+    
+            else:
+                # Recover all optimized coordinates in physical units.
+                self.location = result.x * scale
+    
         else:
+            # Restore the original source location if the optimization fails.
             self.location = original_location
-
+    
         return self
