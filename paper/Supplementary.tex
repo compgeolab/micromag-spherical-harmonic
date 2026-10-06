@@ -251,6 +251,31 @@ Complete comparison of inversion performance for the synthetic micromagnetic par
 \label{fig:model_comp}
 \end{figure}
 
+\clearpage
+
+To further assess the stability of the spherical-harmonic solutions in the real-data application, we evaluated the convergence of the recovered magnetic moment components and their corresponding directional and intensity parameters for the three representative anomalies selected for the zoomed views in Figure~5 (main text). Figure~\ref{fig:supp_moment} shows the evolution of $m_x$, $m_y$, and $m_z$ with increasing maximum spherical-harmonic degree, while Figure~\ref{fig:supp_misfit} shows the corresponding convergence of declination, inclination, and magnetic moment magnitude. These results provide an assessment of the sensitivity of the recovered source properties to the choice of maximum spherical-harmonic degree. At higher degrees, the solutions generally remain relatively close to the corresponding nonlinear dipole estimates, which is consistent with the attenuation of higher-order contributions with increasing sensor-to-source distance.
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=1.\textwidth]{paper/figures/supplementary_magnetic_components_zoom_results.png}
+\caption{
+Convergence of the Cartesian components of the magnetic moment, $m_x$ (panel a), $m_y$ (panel b), and $m_z$ (panel c), as a function of the maximum spherical-harmonic degree used in the inversion. Solid lines and symbols show the nonlinear spherical-harmonic solutions, whereas dashed lines indicate the corresponding nonlinear dipole solutions. Colors identify the three selected magnetic anomalies shown in Fig.~5a--c (see main text).
+}
+\label{fig:supp_moment}
+\end{figure}
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=1.\textwidth]{paper/figures/supplementary_misfits_zoom_results.png}
+\caption{
+Convergence of the magnetic-field direction and magnitude as a function of the maximum spherical-harmonic degree used in the inversion. Panels show (a) declination, (b) inclination, and (c) magnetic moment magnitude. Solid lines and symbols show the nonlinear spherical-harmonic solutions, whereas dashed lines indicate the corresponding nonlinear dipole solutions. Colors identify the three selected magnetic anomalies shown in Fig.~5a--c (see main text).
+}
+\label{fig:supp_misfit}
+\end{figure}
+
 
 \clearpage
 \bibliographystyle{apalike-doi}
